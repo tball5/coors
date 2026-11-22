@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#02060e" />
+    <title>Hologram Cans</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='7' fill='none' stroke='%237ee7ff' stroke-width='2'/%3E%3Ccircle cx='16' cy='16' r='2' fill='%237ee7ff'/%3E%3C/svg%3E" />
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #02060e;
+      --ink: rgba(214, 244, 255, 0.86);
+      --dim: rgba(168, 214, 232, 0.62);
+      --hot: #9aefff;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      height: 100%;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: "Cascadia Mono", "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      overflow: hidden;
+    }
+
+    #view {
+      display: block;
+      width: 100%;
+      height: 100%;
+      height: 100dvh;
+      touch-action: none;
+    }
+
+    .vignette {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background:
+        radial-gradient(ellipse at 50% 42%, transparent 34%, rgba(1, 4, 12, 0.62) 100%),
+        linear-gradient(to top, rgba(1, 5, 14, 0.38), transparent 24%);
+    }
+
+    .brand, .hint, #status, .switch {
+      user-select: none;
+    }
+
+    .brand, .hint, #status {
+      pointer-events: none;
+    }
+
+    .brand {
+      position: fixed;
+      z-index: 2;
+      top: calc(18px + env(safe-area-inset-top));
+      left: calc(20px + env(safe-area-inset-left));
+      margin: 0;
+    }
+
+    .brand strong {
+      display: block;
+      font-size: 13px;
+      font-weight: 500;
+      letter-spacing: 0.42em;
+    }
+
+    .brand strong span { color: var(--hot); }
+
+    .brand em {
+      display: block;
+      margin-top: 6px;
+      font-style: normal;
+      font-size: 10px;
+      letter-spacing: 0.28em;
+      color: var(--dim);
+    }
+
+    .hint {
+      position: fixed;
+      z-index: 2;
+      left: 0;
+      right: 0;
+      bottom: calc(16px + env(safe-area-inset-bottom));
+      margin: 0;
+      text-align: center;
+      font-size: 10px;
+      letter-spacing: 0.28em;
+      color: var(--dim);
+    }
+
+    #status {
+      position: fixed;
+      inset: 0;
+      z-index: 3;
+      display: grid;
+      place-items: center;
+      margin: 0;
+      font-size: 12px;
+      letter-spacing: 0.46em;
+      color: var(--hot);
+      transition: opacity 0.35s ease;
+    }
+
+    #status.is-done { opacity: 0; }
+    #status.is-error { color: #ffb4c4; letter-spacing: 0.28em; }
+
+    .switch {
+      position: fixed;
+      z-index: 4;
+      top: calc(16px + env(safe-area-inset-top));
+      right: calc(16px + env(safe-area-inset-right));
+      display: flex;
+      padding: 4px;
+      background: rgba(2, 8, 16, 0.9);
+      border: 1px solid rgba(154, 239, 255, 0.75);
+      border-radius: 999px;
+      box-shadow: 0 0 22px rgba(90, 200, 255, 0.28);
+    }
+
+    .switch button {
+      font: inherit;
+      font-size: 14px;
+      font-weight: 600;
+      letter-spacing: 0.14em;
+      color: #d7f6ff;
+      background: transparent;
+      border: 0;
+      border-radius: 999px;
+      min-height: 44px;
+      min-width: 112px;
+      padding: 0 18px;
+      cursor: pointer;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .switch button.is-on {
+      color: #041018;
+      background: var(--hot);
+    }
+
+    .switch button:focus-visible {
+      outline: 2px solid #fff;
+      outline-offset: 2px;
+    }
+
+    body.is-capture .brand,
+    body.is-capture .hint,
+    body.is-capture .switch,
+    body.is-capture .vignette { display: none; }
+
+    @media (max-width: 640px) {
+      .brand strong { letter-spacing: 0.28em; font-size: 12px; }
+      .hint {
+        letter-spacing: 0.08em;
+        font-size: 10px;
+        bottom: calc(76px + env(safe-area-inset-bottom));
+      }
+      .switch {
+        top: auto;
+        right: auto;
+        left: 50%;
+        bottom: calc(12px + env(safe-area-inset-bottom));
+        transform: translateX(-50%);
+        width: min(calc(100vw - 24px), 440px);
+      }
+      .switch button {
+        flex: 1;
+        min-width: 0;
+        min-height: 48px;
+        font-size: 15px;
+        letter-spacing: 0.12em;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      #status { transition: none; }
+    }
+  </style>
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://unpkg.com/three@0.160.1/build/three.module.js",
+      "three/addons/": "https://unpkg.com/three@0.160.1/examples/jsm/"
+    }
+  }
+  </script>
+</head>
+<body>
+  <canvas id="view" aria-label="Spinning holographic projection of a Coors beer can"></canvas>
+  <div class="vignette" aria-hidden="true"></div>
+  <p class="brand"><strong>CO<span>ORS</span></strong><em>HOLOGRAM · 12 OZ</em></p>
+  <div id="can-switch" class="switch" role="group" aria-label="Choose a can">
+    <button type="button" data-can="coors" class="is-on" aria-pressed="true">COORS</button>
+    <button type="button" data-can="arizona" aria-pressed="false">ARIZONA</button>
+  </div>
+  <p class="hint">DRAG TO ORBIT · SCROLL TO ZOOM · TAP A CAN OR PRESS T</p>
+  <p id="status">PROJECTING</p>
+  <noscript>This hologram needs JavaScript to project.</noscript>
+  <script type="module" src="./js/main.js"></script>
+</body>
+</html>

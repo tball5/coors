@@ -127,21 +127,9 @@ function mount({ labelCanvas, arizonaCanvas, gifFont }) {
   const brandName = document.querySelector('.brand strong');
   const brandMeta = document.querySelector('.brand em');
   const switcher = document.querySelector('#can-switch');
-  const colors = document.querySelector('#color-switch');
-  const palettes = ['blue', 'coors', 'arizona'];
   let activeCan = initialCan;
   let stage = null;
-  const requestedPalette = params.get('palette');
-  let palette = palettes.includes(requestedPalette) ? requestedPalette : 'blue';
-  const showPalette = (name) => {
-    palette = palettes.includes(name) ? name : 'blue';
-    holograms.gif.userData.setPalette(palette);
-    colors.querySelectorAll('button').forEach((button) => {
-      const on = button.dataset.palette === palette;
-      button.classList.toggle('is-on', on);
-      button.setAttribute('aria-pressed', on ? 'true' : 'false');
-    });
-  };
+  let bloom = null;
   const showCan = (id, keepAngle) => {
     activeCan = id;
     ORDER.forEach((key) => {
@@ -156,27 +144,28 @@ function mount({ labelCanvas, arizonaCanvas, gifFont }) {
       button.classList.toggle('is-on', on);
       button.setAttribute('aria-pressed', on ? 'true' : 'false');
     });
-    colors.hidden = id !== 'gif';
-    document.body.classList.toggle('is-gif', id === 'gif');
     if (stage) stage.setShade(id !== 'gif');
+    if (bloom) {
+      if (id === 'gif') {
+        bloom.strength = 0.12;
+        bloom.radius = 0.15;
+        bloom.threshold = 0.82;
+      } else {
+        bloom.strength = 0.4;
+        bloom.radius = 0.36;
+        bloom.threshold = 0.45;
+      }
+    }
     placeCamera(camera, controls, id, keepAngle);
   };
-  showPalette(palette);
   showCan(initialCan, false);
-  const pressSwitch = (event) => {
+  switcher.addEventListener('pointerdown', (event) => {
     event.stopPropagation();
-  };
-  switcher.addEventListener('pointerdown', pressSwitch);
-  colors.addEventListener('pointerdown', pressSwitch);
+  });
   switcher.addEventListener('click', (event) => {
     const button = event.target.closest('button');
     if (!button || !ORDER.includes(button.dataset.can)) return;
     showCan(button.dataset.can, true);
-  });
-  colors.addEventListener('click', (event) => {
-    const button = event.target.closest('button');
-    if (!button || !button.dataset.palette) return;
-    showPalette(button.dataset.palette);
   });
   window.addEventListener('keydown', (event) => {
     if (event.repeat || event.metaKey || event.ctrlKey || event.altKey) return;
@@ -194,13 +183,14 @@ function mount({ labelCanvas, arizonaCanvas, gifFont }) {
 
   const composer = new EffectComposer(renderer);
   composer.addPass(new RenderPass(scene, camera));
-  const bloom = new UnrealBloomPass(
+  bloom = new UnrealBloomPass(
     new THREE.Vector2(window.innerWidth, window.innerHeight),
     0.4,
     0.36,
     0.45,
   );
   composer.addPass(bloom);
+  showCan(activeCan, true);
   composer.addPass(new OutputPass());
 
   const state = {

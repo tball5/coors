@@ -43,7 +43,7 @@
         linear-gradient(to top, rgba(1, 5, 14, 0.38), transparent 24%);
     }
 
-    .brand, .hint, #status, .switch, .colors {
+    .brand, .hint, #status, .switch {
       user-select: none;
     }
 
@@ -141,70 +141,14 @@
       background: var(--hot);
     }
 
-    .switch button:focus-visible,
-    .colors button:focus-visible {
+    .switch button:focus-visible {
       outline: 2px solid #fff;
       outline-offset: 2px;
-    }
-
-    .colors {
-      position: fixed;
-      z-index: 4;
-      top: calc(76px + env(safe-area-inset-top));
-      right: calc(16px + env(safe-area-inset-right));
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      margin: 0;
-      padding: 4px 4px 4px 10px;
-      background: rgba(2, 8, 16, 0.9);
-      border: 1px solid rgba(154, 239, 255, 0.45);
-      border-radius: 999px;
-    }
-
-    .colors[hidden] { display: none; }
-
-    .colors span {
-      font-size: 10px;
-      letter-spacing: 0.18em;
-      color: var(--dim);
-    }
-
-    .colors button {
-      font: inherit;
-      font-size: 11px;
-      font-weight: 600;
-      letter-spacing: 0.08em;
-      color: #d7f6ff;
-      background: transparent;
-      border: 0;
-      border-radius: 999px;
-      min-height: 36px;
-      padding: 0 12px;
-      cursor: pointer;
-      touch-action: manipulation;
-      -webkit-tap-highlight-color: transparent;
-    }
-
-    .colors button[data-palette="blue"].is-on {
-      color: #041018;
-      background: linear-gradient(90deg, #d7f6ff, #3ec6ff 55%, #1a6ad4);
-    }
-
-    .colors button[data-palette="coors"].is-on {
-      color: #2a1208;
-      background: linear-gradient(90deg, #fff1d0, #ffb15a 58%, #ff3b32);
-    }
-
-    .colors button[data-palette="arizona"].is-on {
-      color: #04241c;
-      background: linear-gradient(90deg, #d8fff1, #2fe0c5 55%, #ff86b4);
     }
 
     body.is-capture .brand,
     body.is-capture .hint,
     body.is-capture .switch,
-    body.is-capture .colors,
     body.is-capture .vignette { display: none; }
 
     @media (max-width: 900px) {
@@ -230,21 +174,6 @@
         font-size: 12px;
         letter-spacing: 0.06em;
       }
-      .colors {
-        top: auto;
-        right: auto;
-        left: 50%;
-        transform: translateX(-50%);
-        bottom: calc(76px + env(safe-area-inset-bottom));
-      }
-      .colors button {
-        min-height: 44px;
-        padding: 0 14px;
-        font-size: 12px;
-      }
-      body.is-gif .hint {
-        bottom: calc(136px + env(safe-area-inset-bottom));
-      }
     }
 
     @media (prefers-reduced-motion: reduce) {
@@ -268,12 +197,6 @@
     <button type="button" data-can="coors" class="is-on" aria-pressed="true">COORS</button>
     <button type="button" data-can="arizona" aria-pressed="false">ARIZONA</button>
     <button type="button" data-can="gif" aria-pressed="false">IT'S A GIF</button>
-  </div>
-  <div id="color-switch" class="colors" role="group" aria-label="Text color" hidden>
-    <span>COLOR</span>
-    <button type="button" data-palette="blue" class="is-on" aria-pressed="true">BLUE</button>
-    <button type="button" data-palette="coors" aria-pressed="false">COORS</button>
-    <button type="button" data-palette="arizona" aria-pressed="false">ARIZONA</button>
   </div>
   <p class="hint">DRAG TO ORBIT · SCROLL TO ZOOM · TAP A MODE OR PRESS T</p>
   <p id="status">PROJECTING</p>

@@ -3,22 +3,16 @@ import { FontLoader } from 'three/addons/loaders/FontLoader.js';
 import { TextGeometry } from 'three/addons/geometries/TextGeometry.js';
 import { holoMotion, holoTime } from './materials.js';
 
-/** Blue is the can hologram. The other two are the label palettes. */
-export const TEXT_PALETTES = {
-  blue: { a: '#d7f6ff', b: '#3ec6ff', c: '#1a6ad4' },
-  coors: { a: '#fff1d0', b: '#ffb15a', c: '#ff3b32' },
-  arizona: { a: '#d8fff1', b: '#2fe0c5', c: '#ff86b4' },
-};
+const PINK = new THREE.Color('#ff4d8d');
+const CORE = new THREE.Color('#fff6fa');
 
 const textVertex = /* glsl */ `
   varying vec3 vNormal;
   varying vec3 vWorld;
-  varying vec3 vLocal;
 
   void main() {
     vec4 world = modelMatrix * vec4(position, 1.0);
     vWorld = world.xyz;
-    vLocal = position;
     vNormal = normalize(normalMatrix * normal);
     gl_Position = projectionMatrix * viewMatrix * world;
   }
@@ -27,50 +21,33 @@ const textVertex = /* glsl */ `
 const textFragment = /* glsl */ `
   uniform float uTime;
   uniform float uMotion;
-  uniform vec3 uA;
-  uniform vec3 uB;
-  uniform vec3 uC;
+  uniform vec3 uCore;
+  uniform vec3 uPink;
+  uniform float uHalo;
 
   varying vec3 vNormal;
   varying vec3 vWorld;
-  varying vec3 vLocal;
 
   void main() {
     vec3 N = normalize(vNormal);
     vec3 V = normalize(cameraPosition - vWorld);
-    float ndv = clamp(dot(N, V), 0.0, 1.0);
-    float fres = pow(1.0 - ndv, 2.15);
-    float rim = pow(fres, 2.4);
+    float ndv = clamp(abs(dot(N, V)), 0.0, 1.0);
+    float facing = pow(ndv, 0.65);
+    float rim = pow(1.0 - ndv, 1.35);
 
-    float coord = vWorld.y * 11.0 - uTime * 3.2;
+    float coord = vWorld.y * 14.0 - uTime * 3.2;
     float fw = max(fwidth(coord), 0.001);
     float dist = min(fract(coord), 1.0 - fract(coord));
-    float scan = 1.0 - smoothstep(0.02, 0.02 + fw * 1.6, dist);
+    float scan = 1.0 - smoothstep(0.02, 0.02 + fw * 1.4, dist);
+    float shade = mix(0.9, 1.0, scan);
 
-    float sweep = fract(uTime * 0.13);
-    float along = clamp((vWorld.y - 0.1) / 3.1, 0.0, 1.0);
-    float bar = smoothstep(0.045, 0.0, abs(along - sweep));
-
-    float flick = 0.93 + 0.07 * sin(uTime * 17.0) * sin(uTime * 2.7);
+    float flick = 0.97 + 0.03 * sin(uTime * 17.0) * sin(uTime * 2.7);
     flick = mix(1.0, flick, uMotion);
 
-    float gate = step(0.975, fract(sin(floor(uTime * 1.6) * 47.13) * 913.7));
-    gate *= uMotion;
-    float glitch = smoothstep(0.018, 0.0, abs(fract(vWorld.y * 6.5 + uTime * 0.7) - 0.42));
-
-    float h = clamp((vWorld.y - 0.15) / 3.05, 0.0, 1.0);
-    vec3 face = mix(uC, uB, smoothstep(0.08, 0.48, h));
-    face = mix(face, uA, smoothstep(0.42, 0.92, h));
-
-    vec3 col = face * (0.22 + fres * 0.9);
-    col += uA * rim * 0.62;
-    col += face * scan * 0.28;
-    col += uB * bar * 0.55;
-    col += uA * smoothstep(0.72, 1.0, abs(N.y)) * 0.18;
-    col += mix(uA, uC, 0.35) * gate * glitch * 0.7;
-    float shade = mix(0.42, 1.0, scan);
-    col *= shade;
-    col *= flick;
+    vec3 tube = uCore * (0.25 + facing * 1.15) + uPink * rim * 0.55;
+    vec3 halo = uPink * (0.22 + rim * 0.65);
+    vec3 col = mix(tube, halo, uHalo);
+    col *= shade * flick;
 
     gl_FragColor = vec4(col, 1.0);
   }
@@ -81,18 +58,53 @@ export function loadGifFont() {
   return new FontLoader().loadAsync(url.href);
 }
 
-/** Two extruded lines, "IT'S A" over a larger "GIF", centered on the pad. */
+/** Italic neon tubing: "IT'S A" over a larger "GIF". */
 export function createGifText(font) {
-  const uniforms = {
+  const shared = {
     uTime: holoTime,
     uMotion: holoMotion,
-    uA: { value: new THREE.Color(TEXT_PALETTES.blue.a) },
-    uB: { value: new THREE.Color(TEXT_PALETTES.blue.b) },
-    uC: { value: new THREE.Color(TEXT_PALETTES.blue.c) },
+    uCore: { value: CORE },
+    uPink: { value: PINK },
   };
-  const material = new THREE.ShaderMaterial({
-    name: 'HologramText',
-    uniforms,
+  const coreMat = makeMaterial(shared, 0);
+  const haloMat = makeMaterial(shared, 1);
+
+  const gif = makeLine(font, 'GIF', 1.72, 0.16);
+  const its = makeLine(font, "IT'S A", 0.7, 0.09);
+  const gap = 0.24;
+  const gifCore = new THREE.Mesh(gif.geo, coreMat);
+  const itsCore = new THREE.Mesh(its.geo, coreMat);
+  const gifHalo = new THREE.Mesh(gif.geo, haloMat);
+  const itsHalo = new THREE.Mesh(its.geo, haloMat);
+  gifCore.position.y = gif.height / 2;
+  itsCore.position.y = gif.height + gap + its.height / 2;
+  gifHalo.position.copy(gifCore.position);
+  itsHalo.position.copy(itsCore.position);
+  gifHalo.scale.setScalar(1.035);
+  itsHalo.scale.setScalar(1.045);
+  [gifHalo, itsHalo].forEach((mesh) => {
+    mesh.renderOrder = 5;
+  });
+  [gifCore, itsCore].forEach((mesh) => {
+    mesh.renderOrder = 7;
+  });
+
+  const group = new THREE.Group();
+  group.name = 'gif';
+  group.add(gifHalo, itsHalo, gifCore, itsCore);
+  return group;
+}
+
+function makeMaterial(shared, halo) {
+  return new THREE.ShaderMaterial({
+    name: halo ? 'NeonHalo' : 'NeonCore',
+    uniforms: {
+      uTime: shared.uTime,
+      uMotion: shared.uMotion,
+      uCore: shared.uCore,
+      uPink: shared.uPink,
+      uHalo: { value: halo },
+    },
     vertexShader: textVertex,
     fragmentShader: textFragment,
     side: THREE.DoubleSide,
@@ -102,28 +114,6 @@ export function createGifText(font) {
     depthTest: true,
     toneMapped: false,
   });
-
-  const gif = makeLine(font, 'GIF', 1.72, 0.32);
-  const its = makeLine(font, "IT'S A", 0.7, 0.18);
-  const gap = 0.22;
-  const total = gif.height + gap + its.height;
-  const gifMesh = new THREE.Mesh(gif.geo, material);
-  const itsMesh = new THREE.Mesh(its.geo, material);
-  gifMesh.position.y = gif.height / 2;
-  itsMesh.position.y = gif.height + gap + its.height / 2;
-  gifMesh.renderOrder = 6;
-  itsMesh.renderOrder = 6;
-
-  const group = new THREE.Group();
-  group.name = 'gif';
-  group.add(gifMesh, itsMesh);
-  group.userData.setPalette = (name) => {
-    const palette = TEXT_PALETTES[name] || TEXT_PALETTES.blue;
-    uniforms.uA.value.set(palette.a);
-    uniforms.uB.value.set(palette.b);
-    uniforms.uC.value.set(palette.c);
-  };
-  return group;
 }
 
 function makeLine(font, text, size, depth) {
@@ -131,13 +121,32 @@ function makeLine(font, text, size, depth) {
     font,
     size,
     height: depth,
-    curveSegments: 10,
+    curveSegments: 12,
     bevelEnabled: true,
-    bevelThickness: size * 0.04,
-    bevelSize: size * 0.022,
+    bevelThickness: size * 0.05,
+    bevelSize: size * 0.035,
     bevelOffset: 0,
-    bevelSegments: 3,
+    bevelSegments: 4,
   });
+  italicize(geo, 0.32);
+  geo.computeBoundingBox();
+  const box = geo.boundingBox;
+  return {
+    geo,
+    height: box.max.y - box.min.y,
+    width: box.max.x - box.min.x,
+  };
+}
+
+function italicize(geo, slant) {
+  geo.computeBoundingBox();
+  const midY = (geo.boundingBox.max.y + geo.boundingBox.min.y) / 2;
+  const pos = geo.attributes.position;
+  for (let i = 0; i < pos.count; i += 1) {
+    pos.setX(i, pos.getX(i) + (pos.getY(i) - midY) * slant);
+  }
+  pos.needsUpdate = true;
+  geo.computeVertexNormals();
   geo.computeBoundingBox();
   const box = geo.boundingBox;
   geo.translate(
@@ -145,9 +154,4 @@ function makeLine(font, text, size, depth) {
     -(box.max.y + box.min.y) / 2,
     -(box.max.z + box.min.z) / 2,
   );
-  return {
-    geo,
-    height: box.max.y - box.min.y,
-    width: box.max.x - box.min.x,
-  };
 }

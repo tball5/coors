@@ -7,6 +7,7 @@ import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { createArizonaCan, AZ_LABEL_Y0, AZ_LABEL_Y1, AZ_RADIUS } from './arizonaCan.js';
 import { createArizonaLabelCanvas, loadArizonaFont } from './arizonaLabel.js';
 import { createCan } from './can.js';
+import { createGifText, loadGifFont } from './gifText.js';
 import { createLabelCanvas, loadDisplayFont } from './label.js';
 import {
   createArizonaMaterial,
@@ -35,22 +36,43 @@ const statusEl = document.querySelector('#status');
 
 window.__holo = { ready: false };
 
+const ORDER = ['coors', 'arizona', 'gif'];
+const BRAND = {
+  coors: {
+    html: 'CO<span>ORS</span>',
+    meta: 'HOLOGRAM · 12 OZ',
+    label: 'Spinning holographic projection of a Coors beer can',
+  },
+  arizona: {
+    html: 'ARI<span>ZONA</span>',
+    meta: 'HOLOGRAM · 23 OZ',
+    label: 'Spinning holographic projection of an Arizona green tea can',
+  },
+  gif: {
+    html: "IT'S A <span>GIF</span>",
+    meta: 'HOLOGRAM · TEXT',
+    label: "Spinning holographic projection of the words It's a GIF",
+  },
+};
+
 const FRAMES = {
   coors: { target: [0, 1.85, 0], eye: [0, 2.55, 9.15], distance: 9.35 },
   arizona: { target: [0, 2.45, 0], eye: [0, 3.15, 11.6], distance: 11.8 },
+  gif: { target: [0, 1.7, 0], eye: [0, 2.15, 8.6], distance: 8.8 },
 };
 
 try {
   await loadDisplayFont();
   await loadArizonaFont();
+  const gifFont = await loadGifFont();
   const labelCanvas = createLabelCanvas();
   const arizonaCanvas = createArizonaLabelCanvas();
-  mount({ labelCanvas, arizonaCanvas });
+  mount({ labelCanvas, arizonaCanvas, gifFont });
 } catch (error) {
   fail(error instanceof Error ? error.message : 'Projection failed');
 }
 
-function mount({ labelCanvas, arizonaCanvas }) {
+function mount({ labelCanvas, arizonaCanvas, gifFont }) {
   const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   holoMotion.value = reduceMotion ? 0 : 1;
   if (capture) document.body.classList.add('is-capture');
@@ -84,59 +106,82 @@ function mount({ labelCanvas, arizonaCanvas }) {
   controls.maxDistance = 18;
   controls.minPolarAngle = 0.2;
   controls.maxPolarAngle = Math.PI * 0.49;
-  const initialCan = params.get('can') === 'arizona' ? 'arizona' : 'coors';
+  const requested = params.get('can');
+  const initialCan = ORDER.includes(requested) ? requested : 'coors';
   placeCamera(camera, controls, initialCan);
 
   const anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
   const labelMap = createLabelTexture(labelCanvas, anisotropy);
   const arizonaMap = createLabelTexture(arizonaCanvas, anisotropy);
   const rim = createRimMaterial();
-  const cans = {
+  const holograms = {
     coors: createCan(createCanMaterial(labelMap), rim),
     arizona: createArizonaCan(
       createArizonaMaterial(arizonaMap, { y0: AZ_LABEL_Y0, y1: AZ_LABEL_Y1, radius: AZ_RADIUS }),
       rim,
     ),
+    gif: createGifText(gifFont),
   };
-  scene.add(cans.coors, cans.arizona);
+  scene.add(holograms.coors, holograms.arizona, holograms.gif);
 
   const brandName = document.querySelector('.brand strong');
   const brandMeta = document.querySelector('.brand em');
   const switcher = document.querySelector('#can-switch');
+  const colors = document.querySelector('#color-switch');
   let activeCan = initialCan;
+  let palette = params.get('palette') === 'arizona' ? 'arizona' : 'coors';
+  const showPalette = (name) => {
+    palette = name === 'arizona' ? 'arizona' : 'coors';
+    holograms.gif.userData.setPalette(palette);
+    colors.querySelectorAll('button').forEach((button) => {
+      const on = button.dataset.palette === palette;
+      button.classList.toggle('is-on', on);
+      button.setAttribute('aria-pressed', on ? 'true' : 'false');
+    });
+  };
   const showCan = (id, keepAngle) => {
     activeCan = id;
-    cans.coors.visible = id === 'coors';
-    cans.arizona.visible = id === 'arizona';
-    brandName.innerHTML = id === 'coors' ? 'CO<span>ORS</span>' : 'ARI<span>ZONA</span>';
-    brandMeta.textContent = id === 'coors' ? 'HOLOGRAM · 12 OZ' : 'HOLOGRAM · 23 OZ';
-    canvas.setAttribute(
-      'aria-label',
-      id === 'coors'
-        ? 'Spinning holographic projection of a Coors beer can'
-        : 'Spinning holographic projection of an Arizona green tea can',
-    );
+    ORDER.forEach((key) => {
+      holograms[key].visible = key === id;
+    });
+    const brand = BRAND[id];
+    brandName.innerHTML = brand.html;
+    brandMeta.textContent = brand.meta;
+    canvas.setAttribute('aria-label', brand.label);
     switcher.querySelectorAll('button').forEach((button) => {
       const on = button.dataset.can === id;
       button.classList.toggle('is-on', on);
       button.setAttribute('aria-pressed', on ? 'true' : 'false');
     });
+    colors.hidden = id !== 'gif';
+    document.body.classList.toggle('is-gif', id === 'gif');
     placeCamera(camera, controls, id, keepAngle);
   };
+  showPalette(palette);
   showCan(initialCan, false);
-  switcher.addEventListener('pointerdown', (event) => {
+  const pressSwitch = (event) => {
     event.stopPropagation();
-  });
+  };
+  switcher.addEventListener('pointerdown', pressSwitch);
+  colors.addEventListener('pointerdown', pressSwitch);
   switcher.addEventListener('click', (event) => {
     const button = event.target.closest('button');
-    if (!button || (button.dataset.can !== 'coors' && button.dataset.can !== 'arizona')) return;
+    if (!button || !ORDER.includes(button.dataset.can)) return;
     showCan(button.dataset.can, true);
+  });
+  colors.addEventListener('click', (event) => {
+    const button = event.target.closest('button');
+    if (!button || !button.dataset.palette) return;
+    showPalette(button.dataset.palette);
   });
   window.addEventListener('keydown', (event) => {
     if (event.repeat || event.metaKey || event.ctrlKey || event.altKey) return;
     if (event.key !== 't' && event.key !== 'T') return;
+    const typing = event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement;
+    if (typing) return;
     event.preventDefault();
-    showCan(activeCan === 'coors' ? 'arizona' : 'coors', true);
+    const index = ORDER.indexOf(activeCan);
+    showCan(ORDER[(index + 1) % ORDER.length], true);
   });
 
   const stage = createStage();
@@ -176,10 +221,10 @@ function mount({ labelCanvas, arizonaCanvas }) {
 
   const apply = () => {
     const bob = state.mode === 'pose' ? 0 : Math.sin(state.time * 1.15) * BOB;
-    cans.coors.position.y = HOVER + bob;
-    cans.arizona.position.y = HOVER + bob;
-    cans.coors.rotation.y = state.rotation;
-    cans.arizona.rotation.y = state.rotation;
+    ORDER.forEach((key) => {
+      holograms[key].position.y = HOVER + bob;
+      holograms[key].rotation.y = state.rotation;
+    });
     holoTime.value = state.time;
     stage.update(state.time);
   };

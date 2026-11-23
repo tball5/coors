@@ -38,11 +38,14 @@ export function createStage() {
   ping.renderOrder = 3;
   group.add(ping);
 
+  const shade = [];
   const coneGeo = new THREE.CylinderGeometry(1.15, 2.6, 4.6, 72, 1, true);
   coneGeo.translate(0, 2.3, 0);
   const cone = new THREE.Mesh(coneGeo, createConeMaterial());
+  cone.name = 'shade';
   cone.renderOrder = 2;
   group.add(cone);
+  shade.push(cone);
 
   const streakGeo = new THREE.CylinderGeometry(0.016, 0.028, 4.05, 8, 1, true);
   streakGeo.translate(0, 2.02, 0);
@@ -50,13 +53,20 @@ export function createStage() {
   for (let i = 0; i < 8; i += 1) {
     const a = (i / 8) * Math.PI * 2 + Math.PI / 8;
     const streak = new THREE.Mesh(streakGeo, streakMat);
+    streak.name = 'shade';
     streak.position.set(Math.cos(a) * 1.48, 0, Math.sin(a) * 1.48);
     streak.renderOrder = 3;
     group.add(streak);
+    shade.push(streak);
   }
 
   return {
     group,
+    setShade(visible) {
+      shade.forEach((mesh) => {
+        mesh.visible = visible;
+      });
+    },
     update(time) {
       arcs[0].mesh.rotation.y = time * arcs[0].speed;
       arcs[1].mesh.rotation.y = time * arcs[1].speed;

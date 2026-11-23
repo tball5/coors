@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#02060e" />
-    <title>Hologram Cans</title>
+    <title>Holograms</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='7' fill='none' stroke='%237ee7ff' stroke-width='2'/%3E%3Ccircle cx='16' cy='16' r='2' fill='%237ee7ff'/%3E%3C/svg%3E" />
   <style>
     :root {
@@ -151,10 +151,10 @@
     body.is-capture .switch,
     body.is-capture .vignette { display: none; }
 
-    @media (max-width: 640px) {
-      .brand strong { letter-spacing: 0.28em; font-size: 12px; }
+    @media (max-width: 900px) {
+      .brand strong { letter-spacing: 0.22em; font-size: 12px; }
       .hint {
-        letter-spacing: 0.08em;
+        letter-spacing: 0.06em;
         font-size: 10px;
         bottom: calc(76px + env(safe-area-inset-bottom));
       }
@@ -164,14 +164,15 @@
         left: 50%;
         bottom: calc(12px + env(safe-area-inset-bottom));
         transform: translateX(-50%);
-        width: min(calc(100vw - 24px), 440px);
+        width: min(calc(100vw - 16px), 560px);
       }
       .switch button {
         flex: 1;
         min-width: 0;
         min-height: 48px;
-        font-size: 15px;
-        letter-spacing: 0.12em;
+        padding: 0 8px;
+        font-size: 12px;
+        letter-spacing: 0.06em;
       }
     }
 
@@ -192,11 +193,12 @@
   <canvas id="view" aria-label="Spinning holographic projection of a Coors beer can"></canvas>
   <div class="vignette" aria-hidden="true"></div>
   <p class="brand"><strong>CO<span>ORS</span></strong><em>HOLOGRAM · 12 OZ</em></p>
-  <div id="can-switch" class="switch" role="group" aria-label="Choose a can">
+  <div id="can-switch" class="switch" role="group" aria-label="Choose a hologram">
     <button type="button" data-can="coors" class="is-on" aria-pressed="true">COORS</button>
     <button type="button" data-can="arizona" aria-pressed="false">ARIZONA</button>
+    <button type="button" data-can="gif" aria-pressed="false">IT'S A GIF</button>
   </div>
-  <p class="hint">DRAG TO ORBIT · SCROLL TO ZOOM · TAP A CAN OR PRESS T</p>
+  <p class="hint">DRAG TO ORBIT · SCROLL TO ZOOM · TAP A MODE OR PRESS T</p>
   <p id="status">PROJECTING</p>
   <noscript>This hologram needs JavaScript to project.</noscript>
   <script type="module" src="./js/main.js"></script>

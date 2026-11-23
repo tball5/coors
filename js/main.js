@@ -20,6 +20,7 @@ import {
 import { createStage } from './stage.js';
 
 const SPIN_PERIOD = 15;
+const TEXT_SPIN_PERIOD = 24;
 const HOVER = 0.13;
 const BOB = 0.04;
 const RESUME_MS = 1400;
@@ -254,7 +255,8 @@ function mount({ labelCanvas, arizonaCanvas, gifFont }) {
     last = now;
     if (state.mode === 'spin') {
       state.time += dt;
-      state.rotation = (state.time / SPIN_PERIOD) * Math.PI * 2;
+      const period = activeCan === 'gif' ? TEXT_SPIN_PERIOD : SPIN_PERIOD;
+      state.rotation += (dt / period) * Math.PI * 2;
     }
     if (state.mode !== 'capture') render();
     requestAnimationFrame(frame);

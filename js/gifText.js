@@ -3,8 +3,9 @@ import { FontLoader } from 'three/addons/loaders/FontLoader.js';
 import { TextGeometry } from 'three/addons/geometries/TextGeometry.js';
 import { holoMotion, holoTime } from './materials.js';
 
-/** Cream/gold/red and mint/teal/pink, taken from the two can labels. */
+/** Blue is the can hologram. The other two are the label palettes. */
 export const TEXT_PALETTES = {
+  blue: { a: '#d7f6ff', b: '#3ec6ff', c: '#1a6ad4' },
   coors: { a: '#fff1d0', b: '#ffb15a', c: '#ff3b32' },
   arizona: { a: '#d8fff1', b: '#2fe0c5', c: '#ff86b4' },
 };
@@ -85,9 +86,9 @@ export function createGifText(font) {
   const uniforms = {
     uTime: holoTime,
     uMotion: holoMotion,
-    uA: { value: new THREE.Color(TEXT_PALETTES.coors.a) },
-    uB: { value: new THREE.Color(TEXT_PALETTES.coors.b) },
-    uC: { value: new THREE.Color(TEXT_PALETTES.coors.c) },
+    uA: { value: new THREE.Color(TEXT_PALETTES.blue.a) },
+    uB: { value: new THREE.Color(TEXT_PALETTES.blue.b) },
+    uC: { value: new THREE.Color(TEXT_PALETTES.blue.c) },
   };
   const material = new THREE.ShaderMaterial({
     name: 'HologramText',
@@ -117,7 +118,7 @@ export function createGifText(font) {
   group.name = 'gif';
   group.add(gifMesh, itsMesh);
   group.userData.setPalette = (name) => {
-    const palette = TEXT_PALETTES[name] || TEXT_PALETTES.coors;
+    const palette = TEXT_PALETTES[name] || TEXT_PALETTES.blue;
     uniforms.uA.value.set(palette.a);
     uniforms.uB.value.set(palette.b);
     uniforms.uC.value.set(palette.c);

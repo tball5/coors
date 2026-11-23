@@ -128,10 +128,13 @@ function mount({ labelCanvas, arizonaCanvas, gifFont }) {
   const brandMeta = document.querySelector('.brand em');
   const switcher = document.querySelector('#can-switch');
   const colors = document.querySelector('#color-switch');
+  const palettes = ['blue', 'coors', 'arizona'];
   let activeCan = initialCan;
-  let palette = params.get('palette') === 'arizona' ? 'arizona' : 'coors';
+  let stage = null;
+  const requestedPalette = params.get('palette');
+  let palette = palettes.includes(requestedPalette) ? requestedPalette : 'blue';
   const showPalette = (name) => {
-    palette = name === 'arizona' ? 'arizona' : 'coors';
+    palette = palettes.includes(name) ? name : 'blue';
     holograms.gif.userData.setPalette(palette);
     colors.querySelectorAll('button').forEach((button) => {
       const on = button.dataset.palette === palette;
@@ -155,6 +158,7 @@ function mount({ labelCanvas, arizonaCanvas, gifFont }) {
     });
     colors.hidden = id !== 'gif';
     document.body.classList.toggle('is-gif', id === 'gif');
+    if (stage) stage.setShade(id !== 'gif');
     placeCamera(camera, controls, id, keepAngle);
   };
   showPalette(palette);
@@ -184,8 +188,9 @@ function mount({ labelCanvas, arizonaCanvas, gifFont }) {
     showCan(ORDER[(index + 1) % ORDER.length], true);
   });
 
-  const stage = createStage();
+  stage = createStage();
   scene.add(stage.group);
+  stage.setShade(activeCan !== 'gif');
 
   const composer = new EffectComposer(renderer);
   composer.addPass(new RenderPass(scene, camera));

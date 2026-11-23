@@ -186,6 +186,11 @@
       -webkit-tap-highlight-color: transparent;
     }
 
+    .colors button[data-palette="blue"].is-on {
+      color: #041018;
+      background: linear-gradient(90deg, #d7f6ff, #3ec6ff 55%, #1a6ad4);
+    }
+
     .colors button[data-palette="coors"].is-on {
       color: #2a1208;
       background: linear-gradient(90deg, #fff1d0, #ffb15a 58%, #ff3b32);
@@ -266,7 +271,8 @@
   </div>
   <div id="color-switch" class="colors" role="group" aria-label="Text color" hidden>
     <span>COLOR</span>
-    <button type="button" data-palette="coors" class="is-on" aria-pressed="true">COORS</button>
+    <button type="button" data-palette="blue" class="is-on" aria-pressed="true">BLUE</button>
+    <button type="button" data-palette="coors" aria-pressed="false">COORS</button>
     <button type="button" data-palette="arizona" aria-pressed="false">ARIZONA</button>
   </div>
   <p class="hint">DRAG TO ORBIT · SCROLL TO ZOOM · TAP A MODE OR PRESS T</p>

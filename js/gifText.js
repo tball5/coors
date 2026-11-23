@@ -1,7 +1,6 @@
 import * as THREE from 'three';
 import { FontLoader } from 'three/addons/loaders/FontLoader.js';
 import { TextGeometry } from 'three/addons/geometries/TextGeometry.js';
-import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { holoMotion, holoTime } from './materials.js';
 
 const PINK = new THREE.Color('#ff4d8d');
@@ -74,8 +73,8 @@ export function createGifText(font) {
   const coreMat = makeMaterial(shared, 0);
   const haloMat = makeMaterial(shared, 1);
 
-  const gif = makeLine(font, 'GIF', 1.72, 0.16, 0.2);
-  const its = makeLine(font, "IT'S A", 0.7, 0.09, 0.08);
+  const gif = makeLine(font, 'GIF', 1.72, 0.16);
+  const its = makeLine(font, "IT'S A", 0.7, 0.09);
   const gap = 0.24;
   const gifCore = new THREE.Mesh(gif.geo, coreMat);
   const itsCore = new THREE.Mesh(its.geo, coreMat);
@@ -121,41 +120,21 @@ function makeMaterial(shared, halo) {
   });
 }
 
-function makeLine(font, text, size, depth, tracking) {
-  const parts = [];
-  let cursor = 0;
-  for (const ch of text) {
-    if (ch === ' ') {
-      cursor += size * 0.38;
-      continue;
-    }
-    const geo = new TextGeometry(ch, {
-      font,
-      size,
-      height: depth,
-      curveSegments: 12,
-      bevelEnabled: true,
-      bevelThickness: size * 0.05,
-      bevelSize: size * 0.035,
-      bevelOffset: 0,
-      bevelSegments: 4,
-    });
-    italicize(geo, 0.32);
-    const box = geo.boundingBox;
-    const width = box.max.x - box.min.x;
-    geo.translate(cursor - box.min.x, 0, 0);
-    parts.push(geo);
-    const gap = ch === "'" ? tracking * 0.35 : tracking;
-    cursor += width + size * gap;
-  }
-  const geo = mergeGeometries(parts, false);
+function makeLine(font, text, size, depth) {
+  const geo = new TextGeometry(text, {
+    font,
+    size,
+    height: depth,
+    curveSegments: 12,
+    bevelEnabled: true,
+    bevelThickness: size * 0.05,
+    bevelSize: size * 0.035,
+    bevelOffset: 0,
+    bevelSegments: 4,
+  });
+  italicize(geo, 0.32);
   geo.computeBoundingBox();
   const box = geo.boundingBox;
-  geo.translate(
-    -(box.max.x + box.min.x) / 2,
-    -(box.max.y + box.min.y) / 2,
-    -(box.max.z + box.min.z) / 2,
-  );
   return {
     geo,
     height: box.max.y - box.min.y,
